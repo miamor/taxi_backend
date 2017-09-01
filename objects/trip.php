@@ -203,16 +203,6 @@ class Trip extends Config {
 		$stmt->execute();
 		$row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-/*        if ($row['status'] == 0)
-            $row['buybtn'] = '<div class="trip-buy center">
-                <button class="button button-assertive disabled">Chuyến đã được mua</button>
-            </div>';
-        else {
-            if ($row['taxiid'] == $_SESSION['taxi'])
-                $row['buybtn'] = '<div class="trip-phone">'.$row['phone'].'</div>';
-            else $row['buybtn'] = '<div class="trip-buy center"><button class="button button-assertive disabled">Chuyến đã được mua</button></div>';
-        }
-*/
         if ($row['id']) {
             $row['addressfrom_full'] = $row['addressfrom'];
             $row['addressto_full'] = $row['addressto'];
@@ -231,6 +221,74 @@ class Trip extends Config {
 
         return ($row['id'] ? $row : null);
     }
+
+
+
+
+    public function readAllBuy_today () {
+        $now = date('Y-m-d');
+
+        $query = "SELECT
+    				*
+    			FROM
+    				" . $this->table_name . "
+    			WHERE
+                    taxiid = {$this->taxiID}
+                    AND time LIKE '{$now}%'
+                ORDER BY
+                    status ASC, time ASC, id ASC";
+
+    	$stmt = $this->conn->prepare($query);
+    	$stmt->execute();
+
+    	$all_list = array();
+
+    	while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $row['is_round_txt'] = ($row['is_round'] ? '2 chiều' : null);
+            $row['is_one_round'] = ($row['is_round'] ? 0 : 1);
+            $fromAr = array_values(array_filter(explode(',', $row['addressfrom'])));
+            $toAr = array_values(array_filter(explode(',', $row['addressto'])));
+            $row['addressfrom'] = trim(implode(',', array_slice($fromAr, -2, 2, true)));
+            $row['addressto'] = trim(implode(',', array_slice($toAr, -2, 2, true)));
+            $all_list[] = $row;
+        }
+        return $all_list;
+    }
+
+    public function readAllBuy () {
+        $now = date('Y-m-d');
+        $todayList = $this->readAllBuy_today();
+
+        $query = "SELECT
+    					*
+    				FROM
+    					" . $this->table_name . "
+    				WHERE
+                        taxiid = {$this->taxiID}
+                        AND time NOT LIKE '{$now}%'
+                    ORDER BY
+                        status ASC, time ASC, id ASC";
+
+		$stmt = $this->conn->prepare($query);
+		$stmt->execute();
+
+		$all_list = array();
+
+		while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $row['is_round_txt'] = ($row['is_round'] ? '2 chiều' : null);
+            $row['is_one_round'] = ($row['is_round'] ? 0 : 1);
+            $fromAr = array_values(array_filter(explode(',', $row['addressfrom'])));
+            $toAr = array_values(array_filter(explode(',', $row['addressto'])));
+            $row['addressfrom'] = trim(implode(',', array_slice($fromAr, -2, 2, true)));
+            $row['addressto'] = trim(implode(',', array_slice($toAr, -2, 2, true)));
+            $all_list[] = $row;
+        }
+
+        $this->all_list = array('today'=>$todayList,
+         'others'=>$all_list);
+        return $this->all_list;
+    }
+
 
     public function changeStt ($stt) {
         $query = "UPDATE
