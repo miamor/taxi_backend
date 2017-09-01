@@ -122,16 +122,17 @@ class Taxi extends Config {
 				SET
 					password = ?
 				WHERE
-					username = ?";
+					id = ?";
 
 		$stmt = $this->conn->prepare($query);
 
 		// posted values
-        $stmt->bindParam(1, $this->password);
-        $stmt->bindParam(2, $this->username);
+        $this->passwordHash = hash('sha256', $this->password);
+        $stmt->bindParam(1, $this->passwordHash);
+        $stmt->bindParam(2, $this->id);
 
 		// execute the query
-		if ($stmt->execute()) return true;
+		if ($stmt->execute()) return $this->passwordHash;
 		else return false;
 	}
 

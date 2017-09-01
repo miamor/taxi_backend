@@ -129,7 +129,7 @@ class Trip extends Config {
 				FROM
 					" . $this->table_name . "
 				WHERE
-                    (status = 0 OR taxiid = {$this->taxiID})
+                    status = 0
                     AND time LIKE '{$now}%' AND
                     (prioritize != {$this->taxiID} OR prioritize IS NULL)
                 ORDER BY
@@ -162,7 +162,7 @@ class Trip extends Config {
     				FROM
     					" . $this->table_name . "
     				WHERE
-                        (status = 0 OR taxiid = {$this->taxiID})
+                        status = 0
                         AND time NOT LIKE '{$now}%' AND
                         (prioritize != {$this->taxiID} OR prioritize IS NULL)
                     ORDER BY

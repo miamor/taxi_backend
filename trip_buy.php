@@ -9,8 +9,8 @@ include 'objects/trip.php';
 
 $taxi = new Taxi();
 $trip = new Trip();
-$trip->id = ($_POST['id']) ? $_POST['id'] : 5;
-$taxi->id = ($_POST['taxiid']) ? $_POST['taxiid'] : 6;
+$trip->id = ($_POST['id']) ? $_POST['id'] : null;
+$taxi->id = ($_POST['taxiid']) ? $_POST['taxiid'] : null;
 if ($trip->id) {
     $tripData = $trip->readOne();
 
