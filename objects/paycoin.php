@@ -82,7 +82,10 @@ class PayCoin extends Config {
             if ($row['type'] == -1) $row['typetxt'] = 'error';
             else if ($row['type'] == 1) $row['typetxt'] = 'add';
             else $row['typetxt'] = 'buytrip';
-            if ($row['coin'] > 0) $row['coin'] = "+{$row['coin']}";
+
+            if ($row['type'] == 1) $row['coin'] = "+{$row['coin']}";
+            else if ($row['coin'] > 0) $row['coin'] = "-{$row['coin']}";
+
             $this->all_list[] = $row;
         }
         return $this->all_list;
