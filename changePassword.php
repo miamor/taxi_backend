@@ -4,13 +4,14 @@ include 'config.php';
     include 'objects/taxi.php';
     $taxi = new Taxi();
 
-    $taxi->id = isset($_POST['taxiid']) ? $_POST['taxiid'] : null;
-    $taxi->password = isset($_POST['password']) ? $_POST['password'] : null;
+    $taxi->id = isset($_POST['taxiid']) ? $_POST['taxiid'] : 1;
+    $taxi->password = isset($_POST['password']) ? $_POST['password'] : 'abc123';
 
 //    echo $_POST['username'];
 
     if ($taxi->id && $taxi->password) {
         $do = $taxi->updatePassword();
-        echo ($do ? $taxi->passwordHash : 0);
+        $data = array('newPassword'=>$taxi->passwordHash);
+        echo ($do ? $data : 0);
     } else echo -1;
 //} else echo -2;
