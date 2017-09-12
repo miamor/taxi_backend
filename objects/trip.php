@@ -124,16 +124,16 @@ class Trip extends Config {
     public function readAll_today () {
         $now = date('Y-m-d');
 
-            $query = "SELECT
+        $query = "SELECT
 					*
-				FROM
-					" . $this->table_name . "
-				WHERE
-                    status = 0
-                    AND time LIKE '{$now}%' AND
-                    (prioritize != {$this->taxiID} OR prioritize IS NULL)
-                ORDER BY
-                    status ASC, time ASC, id ASC";
+			FROM
+				" . $this->table_name . "
+			WHERE
+                status = 0
+                AND time LIKE '{$now}%' AND
+                prioritize IS NULL
+            ORDER BY
+                status ASC, time ASC, id ASC";
 
 		$stmt = $this->conn->prepare($query);
 		$stmt->execute();
@@ -164,7 +164,7 @@ class Trip extends Config {
     				WHERE
                         status = 0
                         AND time NOT LIKE '{$now}%' AND
-                        (prioritize != {$this->taxiID} OR prioritize IS NULL)
+                        prioritize IS NULL
                     ORDER BY
                         status ASC, time ASC, id ASC";
 
@@ -182,13 +182,64 @@ class Trip extends Config {
             $row['addressto'] = trim(implode(',', array_slice($toAr, -2, 2, true)));
             $all_list[] = $row;
         }
-//        echo json_encode($all_list);
 
-        if ($withPri) $this->all_list = array('myPriority'=>$myPriority, 'today'=>$todayList,
-         'others'=>$all_list);
-        else $this->all_list = array('today'=>$todayList,
+        $total = count($myPriority) + count($todayList) + count($all_list);
+        $this->all_list = array('total'=> $total, 'myPriority'=>$myPriority, 'today'=>$todayList,
          'others'=>$all_list);
         return $this->all_list;
+    }
+
+
+    public function count_priority () {
+        $now = date('Y-m-d');
+        $query = "SELECT
+					id,status,prioritize
+				FROM
+					" . $this->table_name . "
+				WHERE
+                    status = 0 AND prioritize = ?";
+
+		$stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $this->taxiID);
+		$stmt->execute();
+        return $stmt->rowCount();
+    }
+
+    public function count_today () {
+        $now = date('Y-m-d');
+
+        $query = "SELECT
+					id,status,time,prioritize
+			FROM
+				" . $this->table_name . "
+			WHERE
+                status = 0
+                AND time LIKE '{$now}%' AND
+                prioritize IS NULL";
+
+		$stmt = $this->conn->prepare($query);
+		$stmt->execute();
+        return $stmt->rowCount();
+    }
+
+    public function countAll () {
+        $now = date('Y-m-d');
+        $today = $this->count_today();
+        $myPriority = $this->count_priority();
+
+        $query = "SELECT
+					id,status,`time`,prioritize
+				FROM
+					" . $this->table_name . "
+                WHERE
+                    status = 0
+                    AND time NOT LIKE '{$now}%'
+                    AND prioritize IS NULL";
+
+		$stmt = $this->conn->prepare($query);
+		$stmt->execute();
+        $all = $stmt->rowCount()+$today+$myPriority;
+        return $all;
     }
 
     public function readOne () {
