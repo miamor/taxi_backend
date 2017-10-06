@@ -99,7 +99,7 @@ class Trip extends Config {
 				FROM
 					" . $this->table_name . "
 				WHERE
-                    status = 0 AND prioritize = ?
+                    approve = 1 AND status = 0 AND prioritize = ?
                 ORDER BY
                     status ASC, time ASC, id ASC";
 
@@ -129,7 +129,8 @@ class Trip extends Config {
 			FROM
 				" . $this->table_name . "
 			WHERE
-                status = 0
+                approve = 1
+                AND status = 0
                 AND time LIKE '{$now}%' AND
                 prioritize IS NULL
             ORDER BY
@@ -162,7 +163,8 @@ class Trip extends Config {
     				FROM
     					" . $this->table_name . "
     				WHERE
-                        status = 0
+                        approve = 1
+                        AND status = 0
                         AND time NOT LIKE '{$now}%' AND
                         prioritize IS NULL
                     ORDER BY
@@ -197,7 +199,7 @@ class Trip extends Config {
 				FROM
 					" . $this->table_name . "
 				WHERE
-                    status = 0 AND prioritize = ?";
+                    approve = 1 AND status = 0 AND prioritize = ?";
 
 		$stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $this->taxiID);
@@ -213,7 +215,8 @@ class Trip extends Config {
 			FROM
 				" . $this->table_name . "
 			WHERE
-                status = 0
+                approve = 1
+                AND status = 0
                 AND time LIKE '{$now}%' AND
                 prioritize IS NULL";
 
@@ -232,7 +235,8 @@ class Trip extends Config {
 				FROM
 					" . $this->table_name . "
                 WHERE
-                    status = 0
+                    approve = 1
+                    AND status = 0
                     AND time NOT LIKE '{$now}%'
                     AND prioritize IS NULL";
 
@@ -247,12 +251,51 @@ class Trip extends Config {
 					*
 				FROM
 					" . $this->table_name . "
-				WHERE id = ?";
+				WHERE id = ? AND approve = 1";
         $stmt = $this->conn->prepare($query);
 		$stmt->bindParam(1, $this->id);
 
 		$stmt->execute();
 		$row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row['id']) {
+            if ($row['taxiid'] == $this->taxiid) {
+                $row['addressfrom_full'] = $row['addressfrom'];
+                $row['addressto_full'] = $row['addressto'];
+            }
+
+            $fromAr = array_values(array_filter(explode(',', $row['addressfrom'])));
+            $toAr = array_values(array_filter(explode(',', $row['addressto'])));
+            $row['addressfrom'] = trim(implode(',', array_slice($fromAr, -2, 2, true)));
+            $row['addressto'] = trim(implode(',', array_slice($toAr, -2, 2, true)));
+            $row['is_round_txt'] = ($row['is_round'] ? '2 chiều' : '1 chiều');
+            $row['is_one_round'] = ($row['is_round'] ? "0" : "1");
+
+            if ($row['taxiid'] != $this->taxiid) {
+                unset($row['phone']);
+            }
+        }
+
+        // set values
+		$this->id = $row['id'];
+        $this->taxiID = $row['taxiid'];
+        $this->time = $row['time'];
+
+        return ($row['id'] ? $row : null);
+    }
+
+
+    public function readOneFull () {
+        $query = "SELECT
+    				*
+    			FROM
+    				" . $this->table_name . "
+    			WHERE id = ? AND approve = 1";
+        $stmt = $this->conn->prepare($query);
+    	$stmt->bindParam(1, $this->id);
+
+    	$stmt->execute();
+    	$row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($row['id']) {
             $row['addressfrom_full'] = $row['addressfrom'];
@@ -266,15 +309,13 @@ class Trip extends Config {
         }
 
         // set values
-		$this->id = $row['id'];
+    	$this->id = $row['id'];
         $this->taxiID = $row['taxiid'];
         $this->coin = $row['coin'];
+        $this->time = $row['time'];
 
         return ($row['id'] ? $row : null);
     }
-
-
-
 
     public function readAllBuy_today () {
         $now = date('Y-m-d');
