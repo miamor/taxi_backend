@@ -259,6 +259,38 @@ class Taxi extends Config {
         return ($row['id'] ? $row : null);
     }
 
+        public function readOneByID () {
+            $query = "SELECT
+    					*
+    				FROM
+    					" . $this->table_name . "
+    				WHERE id = ?";
+            $stmt = $this->conn->prepare($query);
+    		$stmt->bindParam(1, $this->id);
+
+    		$stmt->execute();
+    		$row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // set values
+            if ($row['id']) {
+                $this->id = $row['id'];
+                $this->username = $row['username'];
+                $this->name = $row['name'];
+                $this->phone = $row['phone'];
+                $this->idcard = $row['idcard'];
+                $this->idcar = $row['idcar'];
+                $this->typecar = $row['typecar'];
+                $this->seat = $row['seat'];
+                $this->coin = $row['coin'];
+                $this->rank = $row['rank'];
+                $this->timelife = $row['timelife'];
+                $this->status = $row['status'];
+                $this->idboss = $row['idboss'];
+            }
+
+            return ($row['id'] ? $row : null);
+        }
+
     public function readAllSimple () {
         $query = "SELECT
 				    id,username,name
