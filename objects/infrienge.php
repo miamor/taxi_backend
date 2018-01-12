@@ -25,6 +25,7 @@ class Infrienge extends Config {
         $stmt->bindParam(1, $this->taxiid);
         $stmt->bindParam(2, $this->time);
         $stmt->bindParam(3, $this->details);
+	$stmt->bindParam(0, $this->id);
 
         // execute the query
 		if ($stmt->execute()) {
@@ -33,57 +34,74 @@ class Infrienge extends Config {
 			return false;
     }
 
+   public function readAll_notSeen () {
+        $query = "SELECT
+                                    *
+                                FROM
+                                        " . $this->table_name . "
+                                WHERE status=false AND taxiID=?";
+
+                $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $this->taxiid);
+                $stmt->execute();
+
+                $all_list = array();
+
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+			$all_list[] = $row;
+		}
+        return $all_list;
+    }
 
     public function readAllOneTaxi () {
+        $notSeenList = $this->readAll_notSeen();
         $query = "SELECT
-				    *
-				FROM
-					" . $this->table_name . "
-				WHERE taxiID = ?";
+                                        *
+                                FROM
+                                        " . $this->table_name . "
+				WHERE	status=true AND taxiID=? ORDER BY time DESC";
 
-		$stmt = $this->conn->prepare($query);
+                $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $this->taxiid);
-		$stmt->execute();
+                $stmt->execute();
 
-		$this->all_list = array();
+                $all_list = array();
 
-		while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        //    $row['username'] = '<a href="'.MAIN_URL.'/taxi/'.$row['username'].'"></a>';
-            $this->all_list[] = $row;
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $all_list[] = $row;
         }
+
+        $total = count($notSeenList);
+        $this->all_list = array('total'=>$total, 'notSeen'=>$notSeenList,
+         'others'=>$all_list);
         return $this->all_list;
     }
+
 
     public function readOne () {
         $query = "SELECT
 					*
 				FROM
 					" . $this->table_name . "
-				WHERE username = ?";
+				WHERE id = " . $this->id . "";
         $stmt = $this->conn->prepare($query);
-		$stmt->bindParam(1, $this->username);
 
-		$stmt->execute();
-		$row = $stmt->fetch(PDO::FETCH_ASSOC);
+	$stmt->execute();
+	$row = $stmt->fetch(PDO::FETCH_ASSOC);
+	return ($row ? $row : null);
+    }
 
-        // set values
-        if ($row['id']) {
-            $this->id = $row['id'];
-            $this->username = $row['username'];
-            $this->name = $row['name'];
-            $this->phone = $row['phone'];
-            $this->idcard = $row['idcard'];
-            $this->idcar = $row['idcar'];
-            $this->typecar = $row['typecar'];
-            $this->seat = $row['seat'];
-            $this->coin = $row['coin'];
-            $this->rank = $row['rank'];
-            $this->timelife = $row['timelife'];
-            $this->status = $row['status'];
-            $this->idboss = $row['idboss'];
-        }
+    public function changeStatus () {
+        $query = "UPDATE
+                                        " . $this->table_name . "
+			SET
+				status = true
+                        WHERE id = " . $this->id . "";
+        $stmt = $this->conn->prepare($query);
 
-        return ($row['id'] ? $row : null);
+        $stmt->execute();
+        if ($stmt->execute()) return true;
+        else return false;
     }
 
 }

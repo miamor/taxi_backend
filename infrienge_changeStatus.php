@@ -4,8 +4,7 @@ include 'objects/infrienge.php';
 
 $infrienge = new Infrienge();
 $infrienge->id = ($_POST['id']) ? $_POST['id'] : null;
-//$infrienge->taxiid = ($_POST['taxiid']) ? $_POST['taxiid'] : null;
-if ($infrienge->id) $data = $infrienge->readOne();
+if ($infrienge->id) $data = $infrienge->changeStatus();
 else $data = array();
 
 echo json_encode($data, JSON_UNESCAPED_UNICODE);
