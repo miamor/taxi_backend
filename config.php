@@ -2,11 +2,11 @@
 session_start();
 error_reporting(E_ERROR | E_PARSE);
 
-$__pattern = '/taxi_taxi';
+$__pattern = '/taxi_backend';
 
 define('MAIN_PATH', './');
 
-define('HOST_URL', '//datxenoibai.com'.$__pattern);
+define('HOST_URL', '//localhost'.$__pattern);
 define('MAIN_URL', 'http:'.HOST_URL);
 
 $__page = str_replace($__pattern.'/', '', $_SERVER['REQUEST_URI']);
@@ -86,7 +86,7 @@ class Config {
 	private $host = "localhost";
 	private $db_name = "taxi";
 	private $username = "root";
-	private $password = "123456";
+	private $password = "abc123"; // 123456
 	private $port = "3306";
 	protected $conn;
 	public $u;
