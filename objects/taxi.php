@@ -271,6 +271,7 @@ class Taxi extends Config {
     		$stmt->execute();
     		$row = $stmt->fetch(PDO::FETCH_ASSOC);
 
+            unset($row['password']);
             // set values
             if ($row['id']) {
                 $this->id = $row['id'];

@@ -5,6 +5,7 @@ include 'objects/trip.php';
 
 $trip = new Trip();
 $trip->id = ($_POST['id']) ? $_POST['id'] : null;
+$trip->taxiid = ($_POST['taxiid']) ? $_POST['taxiid'] : null;
 if ($trip->id) $data = $trip->readOneFull();
 else $data = array();
 

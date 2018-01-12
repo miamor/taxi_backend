@@ -13,7 +13,7 @@ class Trip extends Config {
 			$query = "INSERT INTO
 					" . $this->table_name . "
 				SET
-					name = ?, phone = ?, addressfrom = ?, addressto = ?, PNR = ?, time = ?, seat = ?, coin = ?, price = ?, is_round = ?, details = ?";
+					name = ?, phone = ?, addressfrom = ?, addressto = ?, PNR = ?, time = ?, seat = ?, is_round = ?, details = ?, num_guess = ?, price = ?, taxi_sell = ?";
 
 		$stmt = $this->conn->prepare($query);
 
@@ -25,10 +25,10 @@ class Trip extends Config {
         $this->PNR = htmlspecialchars(strip_tags($this->PNR));
         $this->time = htmlspecialchars(strip_tags($this->time));
         $this->seat = htmlspecialchars(strip_tags($this->seat));
-        $this->coin = htmlspecialchars(strip_tags($this->coin));
-        $this->price = htmlspecialchars(strip_tags($this->price));
         $this->is_round = htmlspecialchars(strip_tags($this->is_round));
+        $this->num_guess = htmlspecialchars(strip_tags($this->num_guess));
 		$this->details = content($this->details);
+        $this->taxi_sell = htmlspecialchars(strip_tags($this->taxi_sell));
 
         // bind parameters
 		$stmt->bindParam(1, $this->name);
@@ -38,10 +38,11 @@ class Trip extends Config {
         $stmt->bindParam(5, $this->PNR);
         $stmt->bindParam(6, $this->time);
         $stmt->bindParam(7, $this->seat);
-        $stmt->bindParam(8, $this->coin);
-        $stmt->bindParam(9, $this->price);
-        $stmt->bindParam(10, $this->is_round);
-        $stmt->bindParam(11, $this->details);
+        $stmt->bindParam(8, $this->is_round);
+        $stmt->bindParam(9, $this->details);
+        $stmt->bindParam(10, $this->num_guess);
+        $stmt->bindParam(11, $this->price);
+        $stmt->bindParam(12, $this->taxi_sell);
 
         // execute the query
 		if ($stmt->execute()) {
@@ -71,6 +72,29 @@ class Trip extends Config {
 		// bind parameters
 		$stmt->bindParam(':name', $this->name);
 		$stmt->bindParam(':des', $this->des);
+		$stmt->bindParam(':id', $this->id);
+
+		// execute the query
+		if ($stmt->execute()) return true;
+		else return false;
+	}
+
+    public function changeTripToSell () {
+
+		$query = "UPDATE
+					" . $this->table_name . "
+				SET
+					taxi_sell = :taxi_sell,
+                    status = 0,
+                    taxiid = NULL,
+                    prioritize = NULL
+				WHERE
+					id = :id";
+
+		$stmt = $this->conn->prepare($query);
+
+		// bind parameters
+        $stmt->bindParam(':taxi_sell', $this->taxi_sell);
 		$stmt->bindParam(':id', $this->id);
 
 		// execute the query
@@ -251,7 +275,7 @@ class Trip extends Config {
 					*
 				FROM
 					" . $this->table_name . "
-				WHERE id = ? AND approve = 1";
+				WHERE id = ? AND (approve = 1 OR taxi_sell = {$this->taxiid}) ";
         $stmt = $this->conn->prepare($query);
 		$stmt->bindParam(1, $this->id);
 
@@ -259,9 +283,11 @@ class Trip extends Config {
 		$row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($row['id']) {
-            if ($row['taxiid'] == $this->taxiid) {
+            if ($row['taxiid'] == $this->taxiid || $row['taxi_sell'] == $this->taxiid) {
                 $row['addressfrom_full'] = $row['addressfrom'];
                 $row['addressto_full'] = $row['addressto'];
+            } else {
+                unset($row['phone']);
             }
 
             $fromAr = array_values(array_filter(explode(',', $row['addressfrom'])));
@@ -270,10 +296,6 @@ class Trip extends Config {
             $row['addressto'] = trim(implode(',', array_slice($toAr, -2, 2, true)));
             $row['is_round_txt'] = ($row['is_round'] ? '2 chiều' : '1 chiều');
             $row['is_one_round'] = ($row['is_round'] ? "0" : "1");
-
-            if ($row['taxiid'] != $this->taxiid) {
-                unset($row['phone']);
-            }
         }
 
         // set values
@@ -290,7 +312,7 @@ class Trip extends Config {
     				*
     			FROM
     				" . $this->table_name . "
-    			WHERE id = ? AND approve = 1";
+    			WHERE id = ? AND (approve = 1 OR taxi_sell = {$this->taxiid}) ";
         $stmt = $this->conn->prepare($query);
     	$stmt->bindParam(1, $this->id);
 
@@ -317,6 +339,7 @@ class Trip extends Config {
         return ($row['id'] ? $row : null);
     }
 
+
     public function readAllBuy_today () {
         $now = date('Y-m-d');
 
@@ -327,6 +350,7 @@ class Trip extends Config {
     			WHERE
                     taxiid = {$this->taxiID}
                     AND time LIKE '{$now}%'
+                    AND taxi_sell IS NULL
                 ORDER BY
                     status ASC, time ASC, id ASC";
 
@@ -358,6 +382,72 @@ class Trip extends Config {
     				WHERE
                         taxiid = {$this->taxiID}
                         AND time NOT LIKE '{$now}%'
+                        AND taxi_sell IS NULL
+                    ORDER BY
+                        status ASC, time ASC, id ASC";
+
+		$stmt = $this->conn->prepare($query);
+		$stmt->execute();
+
+		$all_list = array();
+
+		while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $row['is_round_txt'] = ($row['is_round'] ? '2 chiều' : null);
+            $row['is_one_round'] = ($row['is_round'] ? 0 : 1);
+            $fromAr = array_values(array_filter(explode(',', $row['addressfrom'])));
+            $toAr = array_values(array_filter(explode(',', $row['addressto'])));
+            $row['addressfrom'] = trim(implode(',', array_slice($fromAr, -2, 2, true)));
+            $row['addressto'] = trim(implode(',', array_slice($toAr, -2, 2, true)));
+            $all_list[] = $row;
+        }
+
+        $this->all_list = array('today'=>$todayList,
+         'others'=>$all_list);
+        return $this->all_list;
+    }
+
+
+    public function readAllSell_today () {
+        $now = date('Y-m-d');
+
+        $query = "SELECT
+    				*
+    			FROM
+    				" . $this->table_name . "
+    			WHERE
+                    time LIKE '{$now}%'
+                    AND taxi_sell = {$this->taxiID}
+                ORDER BY
+                    status ASC, time ASC, id ASC";
+
+    	$stmt = $this->conn->prepare($query);
+    	$stmt->execute();
+
+    	$all_list = array();
+
+    	while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $row['is_round_txt'] = ($row['is_round'] ? '2 chiều' : null);
+            $row['is_one_round'] = ($row['is_round'] ? 0 : 1);
+            $fromAr = array_values(array_filter(explode(',', $row['addressfrom'])));
+            $toAr = array_values(array_filter(explode(',', $row['addressto'])));
+            $row['addressfrom'] = trim(implode(',', array_slice($fromAr, -2, 2, true)));
+            $row['addressto'] = trim(implode(',', array_slice($toAr, -2, 2, true)));
+            $all_list[] = $row;
+        }
+        return $all_list;
+    }
+
+    public function readAllSell () {
+        $now = date('Y-m-d');
+        $todayList = $this->readAllSell_today();
+
+        $query = "SELECT
+    					*
+    				FROM
+    					" . $this->table_name . "
+    				WHERE
+                        time NOT LIKE '{$now}%'
+                        AND taxi_sell = {$this->taxiID}
                     ORDER BY
                         status ASC, time ASC, id ASC";
 
