@@ -87,7 +87,8 @@ class Trip extends Config {
 					taxi_sell = :taxi_sell,
                     status = 0,
                     taxiid = NULL,
-                    prioritize = NULL
+                    prioritize = NULL,
+                    approve = 0
 				WHERE
 					id = :id";
 
