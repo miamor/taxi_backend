@@ -27,7 +27,10 @@ if ($trip->id) {
                 echo $data;
             } else echo -1; // not enough money
         } else echo -3; // trip is taken or not exist
-    } else echo -4; // out of date
+    } else {
+        echo $end_time.'~'.$now;
+        echo -4; // out of date
+    }
 }
 else echo -2; // no trip found
 
