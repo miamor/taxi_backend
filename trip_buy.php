@@ -11,7 +11,8 @@ $taxi = new Taxi();
 $trip = new Trip();
 $trip->id = (isset($_POST['id'])) ? $_POST['id'] : null;
 $taxi->id = (isset($_POST['taxiid'])) ? $_POST['taxiid'] : null;
-$trip->taxiid = NULL;
+$trip->taxiid = 0;
+
 if ($trip->id) {
     $tripData = $trip->readOneFull();
     $end_time = new DateTime($trip->time);
