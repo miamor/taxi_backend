@@ -493,7 +493,7 @@ class Trip extends Config {
     }
 
     public function buy ($coin) {
-        //$this->changeStt(1);
+        $this->changeStt(1);
         $now = date("Y-m-d H:i:s");
         $query = "INSERT INTO PayCoin SET taxiID = ?, tripID = ?, coin = ?, time = ?";
         $stmt = $this->conn->prepare($query);
